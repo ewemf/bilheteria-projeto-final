@@ -43,6 +43,7 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
 | Nome | Usuário do GitHub | Parte principal |
 | :--- | :--- | :--- |
 | Ewellyn Maria | ewemf | `regras.ts`, `dominio.ts` (OO) |
+| Rafael Cirne | rafaelcirn3 | `preco.ts`, `main.ts` (funcional) |
 | | | |
 
 ### Decisões
