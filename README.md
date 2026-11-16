@@ -42,6 +42,7 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
 
 | Nome | Usuário do GitHub | Parte principal |
 | :--- | :--- | :--- |
+| Ewellyn Maria | ewemf | `regras.ts`, `dominio.ts` (OO) |
 | | | |
 
 ### Decisões
@@ -49,6 +50,20 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
 1. **Concorrência.** Como vocês garantem que duas pessoas não ficam com a mesma poltrona? Onde estava o
    `await` perigoso?
 2. **OO.** O que o `Evento` esconde e por quê? Por que o `reservar` é tudo ou nada? Por que os erros são uma hierarquia de classes?
+
+   O `Evento` esconde a lista das poltronas vendidas (o `#vendidas`). Quem usa a classe de fora só consegue ver quantas
+   restam, com o `disponivel`, e mexer nas poltronas pelo `reservar` e pelo `liberar`. Fizemos assim para ninguém marcar
+   uma poltrona pulando as validações. Se a lista fosse pública, qualquer parte do código podia vender uma poltrona
+   duas vezes sem querer. Também tentei fazer `evento.disponivel = 999` e não muda nada, porque ele é só um getter.
+
+   O `reservar` é tudo ou nada porque um pedido pode ter várias poltronas. Se ele marcasse umas e desse erro numa delas,
+   as que já tinham sido marcadas ficariam presas, sem ninguém ter comprado. Então ele olha todas antes (se a lista está
+   vazia, se a poltrona existe, se repetiu, se já foi vendida) e só marca no final, quando está tudo certo.
+
+   Os erros são uma hierarquia porque todos têm a mesma ideia: algo que deu errado no pedido, com um status HTTP. A
+   `ErroDeNegocio` guarda o `status` e as quatro filhas só mudam o número. Com isso o servidor não precisa olhar qual
+   erro foi: pergunta se é um `ErroDeNegocio` e devolve o `erro.status`. Se aparecer um erro novo, é só criar mais uma
+   filha.
 3. **Funcional.** O que ganhamos com `preco.ts` puro? Como vocês testariam ele sem subir o servidor?
 4. **Se fosse em outro paradigma.** Escolham uma das partes e expliquem como ficaria em outro
    paradigma, e se ficaria melhor ou pior.
