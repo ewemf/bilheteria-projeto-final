@@ -103,9 +103,14 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
 
 | Cenário | Pedidos | Tempo (ms) | Vendidos | Poltrona ocupada | Falha de pagamento |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| Padrão (`main.ts`) | 200 | | | | |
+| Padrão (`main.ts`) | 200 | 445 | 99 | 96 | 5 |
 
 O bench ocupa as poltronas do evento 1: para rodar de novo, parem o `npm start` (Ctrl+C) e subam outra
 vez.
 
-O que os números mostram:
+O que os números mostram: os 200 pedidos disputavam as 100 poltronas do evento 1 (dois por poltrona) e nenhuma foi
+vendida duas vezes. Foram 99 vendas, 96 pedidos recusados porque a poltrona já estava marcada e 5 pagamentos recusados
+pela operadora, somando os 200. Os 5 pagamentos recusados devolveram as poltronas, e quase todas foram compradas depois pelo
+outro pedido que disputava o mesmo lugar e chegou após a liberação, por isso sobrou só 1 poltrona livre no fim
+(`disponivel: 1`). O tempo também mostra a concorrência: cada pagamento leva cerca de 80 ms, então 200 pedidos um
+depois do outro levariam uns 16 segundos, e todos terminaram em 445 ms porque esperaram a operadora ao mesmo tempo.
