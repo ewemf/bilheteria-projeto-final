@@ -50,6 +50,18 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
 
 1. **Concorrência.** Como vocês garantem que duas pessoas não ficam com a mesma poltrona? Onde estava o
    `await` perigoso?
+
+   O `reservar` da `Bilheteria` marca as poltronas no `Evento` antes de qualquer `await`. Como o Node roda o
+   JavaScript numa linha só, entre conferir se a poltrona está livre e marcar ela como vendida nenhum outro pedido
+   consegue rodar. Quando o segundo pedido chega na mesma poltrona, ela já está marcada e ele recebe um
+   `PoltronaOcupadaErro`.
+
+   O `await` perigoso é o do pagamento. Se a gente conferisse a poltrona, esperasse a operadora responder e só depois
+   marcasse, vários pedidos iam conferir a mesma poltrona enquanto esperavam e todos iam achar que ela estava livre.
+   Aí a mesma poltrona seria vendida mais de uma vez. Por isso o pagamento vem depois da marcação: se ele for recusado
+   ou passar do tempo limite (o `comTempoLimite` usa um `Promise.race` com um timer), o `catch` chama o `liberar` e
+   devolve as poltronas. Os pedidos continuam sem esperar uns pelos outros, porque cada um só fica parado no próprio
+   pagamento.
 2. **OO.** O que o `Evento` esconde e por quê? Por que o `reservar` é tudo ou nada? Por que os erros são uma hierarquia de classes?
 
    O `Evento` esconde a lista das poltronas vendidas (o `#vendidas`). Quem usa a classe de fora só consegue ver quantas
