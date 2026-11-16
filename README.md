@@ -67,7 +67,7 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
    O `Evento` esconde a lista das poltronas vendidas (o `#vendidas`). Quem usa a classe de fora só consegue ver quantas
    restam, com o `disponivel`, e mexer nas poltronas pelo `reservar` e pelo `liberar`. Fizemos assim para ninguém marcar
    uma poltrona pulando as validações. Se a lista fosse pública, qualquer parte do código podia vender uma poltrona
-   duas vezes sem querer. Também tentei fazer `evento.disponivel = 999` e não muda nada, porque ele é só um getter.
+   duas vezes sem querer.
 
    O `reservar` é tudo ou nada porque um pedido pode ter várias poltronas. Se ele marcasse umas e desse erro numa delas,
    as que já tinham sido marcadas ficariam presas, sem ninguém ter comprado. Então ele olha todas antes (se a lista está
