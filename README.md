@@ -44,12 +44,24 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
 | :--- | :--- | :--- |
 | Ewellyn Maria | ewemf | `regras.ts`, `dominio.ts` (OO) |
 | Rafael Cirne | rafaelcirn3 | `preco.ts`, `main.ts` (funcional) |
-| | | |
+| Gustavo Martinez | gustavomartinezx | `bilheteria.ts` (concorrente) |
 
 ### Decisões
 
 1. **Concorrência.** Como vocês garantem que duas pessoas não ficam com a mesma poltrona? Onde estava o
    `await` perigoso?
+
+   O `reservar` da `Bilheteria` marca as poltronas no `Evento` antes de qualquer `await`. Como o Node roda o
+   JavaScript numa linha só, entre conferir se a poltrona está livre e marcar ela como vendida nenhum outro pedido
+   consegue rodar. Quando o segundo pedido chega na mesma poltrona, ela já está marcada e ele recebe um
+   `PoltronaOcupadaErro`.
+
+   O `await` perigoso é o do pagamento. Se a gente conferisse a poltrona, esperasse a operadora responder e só depois
+   marcasse, vários pedidos iam conferir a mesma poltrona enquanto esperavam e todos iam achar que ela estava livre.
+   Aí a mesma poltrona seria vendida mais de uma vez. Por isso o pagamento vem depois da marcação: se ele for recusado
+   ou passar do tempo limite (o `comTempoLimite` usa um `Promise.race` com um timer), o `catch` chama o `liberar` e
+   devolve as poltronas. Os pedidos continuam sem esperar uns pelos outros, porque cada um só fica parado no próprio
+   pagamento.
 2. **OO.** O que o `Evento` esconde e por quê? Por que o `reservar` é tudo ou nada? Por que os erros são uma hierarquia de classes?
 
    O `Evento` esconde a lista das poltronas vendidas (o `#vendidas`). Quem usa a classe de fora só consegue ver quantas
@@ -91,9 +103,14 @@ curl -X POST localhost:3000/reservas -H 'Content-Type: application/json' \
 
 | Cenário | Pedidos | Tempo (ms) | Vendidos | Poltrona ocupada | Falha de pagamento |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| Padrão (`main.ts`) | 200 | | | | |
+| Padrão (`main.ts`) | 200 | 445 | 99 | 96 | 5 |
 
 O bench ocupa as poltronas do evento 1: para rodar de novo, parem o `npm start` (Ctrl+C) e subam outra
 vez.
 
-O que os números mostram:
+O que os números mostram: os 200 pedidos disputavam as 100 poltronas do evento 1 (dois por poltrona) e nenhuma foi
+vendida duas vezes. Foram 99 vendas, 96 pedidos recusados porque a poltrona já estava marcada e 5 pagamentos recusados
+pela operadora, somando os 200. Os 5 pagamentos recusados devolveram as poltronas, e quase todas foram compradas depois pelo
+outro pedido que disputava o mesmo lugar e chegou após a liberação, por isso sobrou só 1 poltrona livre no fim
+(`disponivel: 1`). O tempo também mostra a concorrência: cada pagamento leva cerca de 80 ms, então 200 pedidos um
+depois do outro levariam uns 16 segundos, e todos terminaram em 445 ms porque esperaram a operadora ao mesmo tempo.
